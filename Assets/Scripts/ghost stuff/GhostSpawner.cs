@@ -1,11 +1,11 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GhostSpawner : MonoBehaviour
 {
-    public GameObject[] ghostPrefabs; // Array of ghost prefabs with different skins
-    public int numberOfGhosts = 10; // Number of ghosts to spawn
-    public Vector3 spawnAreaSize = new Vector3(50, 0, 50); // Size of the area within which to spawn ghosts
+    public GameObject ghostPrefab; // The ghost prefab to spawn
+    public int numberOfGhosts = 10; // The number of ghosts to spawn
+    public float spawnRadius = 20f; // The radius within which to spawn the ghosts
+    public Transform ground; // Reference to the ground Transform
 
     void Start()
     {
@@ -14,24 +14,19 @@ public class GhostSpawner : MonoBehaviour
 
     void SpawnGhosts()
     {
+        float groundHeight = ground.position.y; // Get the ground height
         for (int i = 0; i < numberOfGhosts; i++)
         {
-            Vector3 randomPosition = GetRandomPosition();
-            GameObject randomGhostPrefab = GetRandomGhostPrefab();
-            Instantiate(randomGhostPrefab, randomPosition, Quaternion.identity);
+            Vector3 spawnPosition = GetRandomSpawnPosition(groundHeight);
+            Instantiate(ghostPrefab, spawnPosition, Quaternion.identity);
         }
     }
 
-    Vector3 GetRandomPosition()
+    Vector3 GetRandomSpawnPosition(float groundHeight)
     {
-        float x = Random.Range(-spawnAreaSize.x / 2, spawnAreaSize.x / 2);
-        float z = Random.Range(-spawnAreaSize.z / 2, spawnAreaSize.z / 2);
-        return new Vector3(x, 0, z); // Ensure ghosts are spawned at y = 0
-    }
-
-    GameObject GetRandomGhostPrefab()
-    {
-        int randomIndex = Random.Range(0, ghostPrefabs.Length);
-        return ghostPrefabs[randomIndex];
+        Vector3 randomPosition = Random.insideUnitSphere * spawnRadius;
+        randomPosition.y = groundHeight + 1f; // Set the spawn height slightly above the ground
+        randomPosition += transform.position;
+        return randomPosition;
     }
 }
