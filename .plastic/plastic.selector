@@ -1,0 +1,4 @@
+repository "a7lam-al3asr@a7doo@cloud"
+  path "/"
+    br "/main"
+    co "/main"
