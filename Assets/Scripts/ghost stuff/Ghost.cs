@@ -13,10 +13,12 @@ public class Ghost : MonoBehaviour
     private Vector3 direction; // Current direction of the ghost
     private List<GameObject> neighbors; // List of neighboring ghosts
     private Vector3 initialPosition; // The initial position of the ghost
+    private bool isFollowingPlayer; // Whether the ghost is following the player
+    private bool isPlayerNearby; // Whether the player is nearby
 
     void Start()
     {
-        direction = transform.forward; // Initialize direction to the forward direction
+        direction = Vector3.zero; // Initially still
         initialPosition = transform.position; // Save the initial position
 
         // Get the player reference from the singleton
@@ -38,27 +40,43 @@ public class Ghost : MonoBehaviour
         }
 
         neighbors = GetNeighbors(); // Update the list of neighbors
-        Vector3 follow = FollowPlayer() * 2.0f; // Calculate the follow vector
+        isPlayerNearby = IsPlayerInFollowRadius();
 
-        if (follow != Vector3.zero) // If the follow vector is not zero, prioritize following the player
+        if (isPlayerNearby || IsNeighborFollowingPlayer())
         {
-            direction = Vector3.Lerp(direction, follow, rotationSpeed * Time.deltaTime).normalized;
+            Vector3 follow = FollowPlayer(); // Calculate the follow vector
+            if (follow != Vector3.zero) // If the follow vector is not zero, prioritize following the player
+            {
+                direction = Vector3.Lerp(direction, follow, rotationSpeed * Time.deltaTime).normalized;
+                isFollowingPlayer = true;
+            }
+            else
+            {
+                isFollowingPlayer = false;
+            }
         }
-        else if (neighbors.Count > 0) // If not following the player, use flocking behavior
+        else
+        {
+            isFollowingPlayer = false;
+            direction = Vector3.zero; // Stop moving if player is not nearby and no neighbors are following
+        }
+
+        if (isFollowingPlayer) // Only apply flocking behavior if following the player
         {
             Vector3 separation = Separation() * 1.5f; // Calculate separation vector
             Vector3 alignment = Alignment() * 1.0f; // Calculate alignment vector
             Vector3 cohesion = Cohesion() * 1.0f; // Calculate cohesion vector
 
             Vector3 flockingDirection = separation + alignment + cohesion; // Combine flocking behaviors
-            direction = Vector3.Lerp(direction, flockingDirection, rotationSpeed * Time.deltaTime).normalized;
+
+            if (flockingDirection != Vector3.zero)
+            {
+                direction = Vector3.Lerp(direction, flockingDirection, rotationSpeed * Time.deltaTime).normalized;
+            }
         }
         else
         {
-            // If no neighbors and not following the player, stay put
-            direction = Vector3.zero;
-
-            // Allow slight movement for animation purposes
+            // Allow slight movement for animation purposes when not following
             float animationOffset = Mathf.Sin(Time.time * 2.0f) * 0.1f; // Adjust frequency and amplitude as needed
             transform.position = initialPosition + new Vector3(0, animationOffset, 0);
             return;
@@ -89,6 +107,27 @@ public class Ghost : MonoBehaviour
             }
         }
         return neighbors;
+    }
+
+    // Check if the player is within the follow radius
+    bool IsPlayerInFollowRadius()
+    {
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        return distanceToPlayer < followRadius;
+    }
+
+    // Check if any neighbor is following the player
+    bool IsNeighborFollowingPlayer()
+    {
+        foreach (var neighbor in neighbors)
+        {
+            Ghost neighborGhost = neighbor.GetComponent<Ghost>();
+            if (neighborGhost != null && neighborGhost.isFollowingPlayer)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Calculate the separation vector to avoid crowding local flockmates
@@ -146,16 +185,12 @@ public class Ghost : MonoBehaviour
     // Calculate the follow vector to steer towards the player if within follow radius
     Vector3 FollowPlayer()
     {
-        if (player != null)
+        if (isPlayerNearby)
         {
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-            if (distanceToPlayer < followRadius)
-            {
-                Vector3 directionToPlayer = player.position - transform.position;
-                directionToPlayer.y = 0; // Ensure movement is horizontal
-                directionToPlayer.Normalize();
-                return directionToPlayer;
-            }
+            Vector3 directionToPlayer = player.position - transform.position;
+            directionToPlayer.y = 0; // Ensure movement is horizontal
+            directionToPlayer.Normalize();
+            return directionToPlayer;
         }
         return Vector3.zero;
     }

@@ -1,8 +1,9 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class GhostSpawner : MonoBehaviour
 {
-    public GameObject ghostPrefab; // The ghost prefab to spawn
+    public List<GameObject> ghostPrefabs; // List of ghost prefabs to spawn
     public int numberOfGhosts = 10; // The number of ghosts to spawn
     public float spawnRadius = 20f; // The radius within which to spawn the ghosts
     public float spawnHeight = 0.5f; // The height at which to spawn the ghosts
@@ -18,7 +19,8 @@ public class GhostSpawner : MonoBehaviour
         {
             Vector3 spawnPosition = GetRandomSpawnPosition();
             Debug.Log($"Spawning ghost at position: {spawnPosition}");
-            Instantiate(ghostPrefab, spawnPosition, Quaternion.identity);
+            GameObject randomGhostPrefab = GetRandomGhostPrefab();
+            Instantiate(randomGhostPrefab, spawnPosition, Quaternion.identity);
         }
     }
 
@@ -28,5 +30,11 @@ public class GhostSpawner : MonoBehaviour
         randomPosition.y = spawnHeight; // Set the spawn height to a fixed value above the ground
         randomPosition += transform.position;
         return randomPosition;
+    }
+
+    GameObject GetRandomGhostPrefab()
+    {
+        int randomIndex = Random.Range(0, ghostPrefabs.Count);
+        return ghostPrefabs[randomIndex];
     }
 }
