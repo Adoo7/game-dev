@@ -4,6 +4,7 @@ using UnityEngine;
 public class Gem : MonoBehaviour
 {
     public float respawnTime = 5f; // Time after which the gem respawns
+    public float respawnRadius = 10f; // Radius within which the gem can respawn
     private Vector3 initialPosition; // Initial position of the gem
 
     void Start()
@@ -28,15 +29,21 @@ public class Gem : MonoBehaviour
     {
         gameObject.SetActive(false);
         yield return new WaitForSeconds(respawnTime);
-        transform.position = GetRandomPosition();
+        transform.position = GetRandomPositionWithinRadius();
         gameObject.SetActive(true);
     }
 
-    private Vector3 GetRandomPosition()
+    private Vector3 GetRandomPositionWithinRadius()
     {
-        // Generate a random position within a certain area
-        float x = Random.Range(-10f, 10f);
-        float z = Random.Range(-10f, 10f);
-        return new Vector3(x, initialPosition.y, z);
+        // Generate a random position within a certain radius around the initial position
+        Vector3 randomDirection = Random.insideUnitSphere * respawnRadius;
+        randomDirection.y = 0; // Keep the position at the same height
+        Vector3 randomPosition = initialPosition + randomDirection;
+
+        // Ensure the position is within a certain range to avoid extreme positions
+        randomPosition.x = Mathf.Clamp(randomPosition.x, initialPosition.x - respawnRadius, initialPosition.x + respawnRadius);
+        randomPosition.z = Mathf.Clamp(randomPosition.z, initialPosition.z - respawnRadius, initialPosition.z + respawnRadius);
+
+        return randomPosition;
     }
 }
