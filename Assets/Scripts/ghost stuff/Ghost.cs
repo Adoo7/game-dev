@@ -27,10 +27,6 @@ public class Ghost : MonoBehaviour
         {
             Debug.LogError($"{gameObject.name} does not have a player assigned!");
         }
-        else
-        {
-            Debug.Log($"{gameObject.name} has player assigned: {player.name}");
-        }
     }
 
     void Update()
@@ -38,7 +34,6 @@ public class Ghost : MonoBehaviour
         if (player == null)
         {
             // Early exit if the player reference is not assigned
-            Debug.LogError($"{gameObject.name} cannot function properly without a player reference.");
             return;
         }
 
@@ -47,7 +42,6 @@ public class Ghost : MonoBehaviour
 
         if (follow != Vector3.zero) // If the follow vector is not zero, prioritize following the player
         {
-            Debug.Log($"{gameObject.name} is following the player.");
             direction = Vector3.Lerp(direction, follow, rotationSpeed * Time.deltaTime).normalized;
         }
         else if (neighbors.Count > 0) // If not following the player, use flocking behavior
@@ -56,14 +50,12 @@ public class Ghost : MonoBehaviour
             Vector3 alignment = Alignment() * 1.0f; // Calculate alignment vector
             Vector3 cohesion = Cohesion() * 1.0f; // Calculate cohesion vector
 
-            Debug.Log($"{gameObject.name} is flocking. Separation: {separation}, Alignment: {alignment}, Cohesion: {cohesion}");
             Vector3 flockingDirection = separation + alignment + cohesion; // Combine flocking behaviors
             direction = Vector3.Lerp(direction, flockingDirection, rotationSpeed * Time.deltaTime).normalized;
         }
         else
         {
             // If no neighbors and not following the player, stay put
-            Debug.Log($"{gameObject.name} is staying put.");
             direction = Vector3.zero;
 
             // Allow slight movement for animation purposes
@@ -72,13 +64,14 @@ public class Ghost : MonoBehaviour
             return;
         }
 
-        direction.y = 0; // Ensure movement is horizontal
+        // Ensure movement is horizontal
+        direction.y = 0;
 
         // Move the ghost in the calculated direction if it's not zero
         if (direction != Vector3.zero)
         {
             transform.position += direction * speed * Time.deltaTime;
-            transform.position = new Vector3(transform.position.x, 0, transform.position.z); // Keep ghosts at a fixed height
+            transform.position = new Vector3(transform.position.x, initialPosition.y, transform.position.z); // Keep ghosts at the initial height
             transform.rotation = Quaternion.LookRotation(direction); // Rotate the ghost to face the direction
         }
     }
@@ -95,7 +88,6 @@ public class Ghost : MonoBehaviour
                 neighbors.Add(hitCollider.gameObject);
             }
         }
-        Debug.Log($"{gameObject.name} found {neighbors.Count} neighbors.");
         return neighbors;
     }
 
@@ -114,7 +106,6 @@ public class Ghost : MonoBehaviour
                 steer += diff;
             }
         }
-        Debug.Log($"{gameObject.name} separation steer: {steer}");
         return steer;
     }
 
@@ -131,7 +122,6 @@ public class Ghost : MonoBehaviour
             averageDirection /= neighbors.Count;
             averageDirection.Normalize();
         }
-        Debug.Log($"{gameObject.name} alignment direction: {averageDirection}");
         return averageDirection;
     }
 
@@ -148,7 +138,6 @@ public class Ghost : MonoBehaviour
             averagePosition /= neighbors.Count;
             Vector3 directionToCenter = averagePosition - transform.position;
             directionToCenter.Normalize();
-            Debug.Log($"{gameObject.name} cohesion direction: {directionToCenter}");
             return directionToCenter;
         }
         return Vector3.zero;
@@ -165,7 +154,6 @@ public class Ghost : MonoBehaviour
                 Vector3 directionToPlayer = player.position - transform.position;
                 directionToPlayer.y = 0; // Ensure movement is horizontal
                 directionToPlayer.Normalize();
-                Debug.Log($"{gameObject.name} is within follow radius. Direction to player: {directionToPlayer}");
                 return directionToPlayer;
             }
         }
